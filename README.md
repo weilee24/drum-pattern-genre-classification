@@ -96,25 +96,6 @@ The strict top-1 score should be read in context: this is a 14-class, imbalanced
 
 The Bayesian approach is useful because it provides uncertainty estimates and interpretable posterior behavior. Instead of only giving a hard label, the model shows when multiple styles are plausible.
 
-## Repository Structure
-
-```text
-.
-├── README.md
-├── requirements.txt
-├── data_description.md
-├── results.md
-├── model_card.md
-├── .gitignore
-├── notebooks/
-│   ├── Data_Preprocessing.ipynb
-│   └── Music_Genre_Identify_Using_Drum_Pattern.ipynb
-├── report/
-│   └── Bayesian_Modeling_of_Drum_Pattern_Styles.pdf
-├── results/
-└── data/
-```
-
 ## How to Run
 
 1. Open `notebooks/Data_Preprocessing.ipynb` in Google Colab.
@@ -136,7 +117,3 @@ The original dataset is large and is not included in this repository. The prepro
 - ArviZ
 - PyTensor
 - Jupyter Notebook / Google Colab
-
-## Notes
-
-This project is designed as a machine learning and Bayesian modeling project. The main contribution is not simply applying an off-the-shelf classifier, but building a full workflow from audio preprocessing to feature extraction, Bayesian modeling, posterior analysis, and error interpretation.

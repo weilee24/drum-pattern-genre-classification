@@ -1,35 +1,33 @@
-# Bayesian Modeling of Drum Pattern Styles
+# Baysian模型於鼓組模式風格分類
 
-這個專案是一個 **14-class drum-style classification** 任務，輸入只使用 **drum-only audio**。模型不使用 melody、vocals、lyrics、harmony、artist metadata，也不使用 full-song production context；整個分類只依賴從 isolated drum performances 擷取出的 rhythmic features 與 spectral features。
+本專案是一個**14 類鼓組風格分類任務**，僅使用**純鼓組音訊**進行建模。模型不使用旋律、人聲、歌詞、和聲、藝人資訊或完整歌曲的製作脈絡，只依賴從獨立鼓組演奏中提取的節奏與頻譜特徵。
 
-因為這是 **14 classes** 的分類問題，約 **35% 到 40% top-1 accuracy** 不能用 binary classification 的標準解讀。若是 balanced random guess，top-1 accuracy 大約只有 **7.1%**。再加上 drum styles 本身有高度重疊，且 dataset 有 class imbalance，因此更重要的結果是：Bayesian models 明顯優於 Gaussian Naive Bayes baseline，並達到約 **55% top-2 accuracy**，代表正確 style 經常出現在模型最有信心的前兩個預測之中。
+由於任務有**14 個類別**，嚴格的 top-1 Accuracy約在 **35%~40%**。隨機猜測的基準約為 **7.1%**，且許多類別在節奏上高度相似或樣本數較少。更具參考價值的指標是：Baysian模型明顯優於簡單的 Naive Bayes Baseline，且 top-2 Accuracy可達到約 **55%**，代表正確風格通常出現在模型最可能的前兩個預測中。
 
-這個專案的目標不是宣稱能完美做 genre recognition，而是測試：在只看 drum patterns 的限制下，模型能從 audio features 中取得多少 style information，並用 Bayesian modeling 分析 prediction uncertainty 與 model limitations。
+## 專案動機
 
-## Project Motivation
-
-Music genre classification 本身不容易，因為 modern genres 經常混合不同元素。很多 styles 會共享相似的 production techniques、melodic patterns 與 instrumentation。相對來說，drum patterns 往往保留較穩定的 rhythmic cues 與 stylistic cues。
+音樂類型分類非常困難，許多風格互相借用相似的製作技術、旋律模式與樂器配置。但鼓組模式通常保留了強烈的節奏與風格特徵。
 
 本專案的核心問題是：
 
-> Can musical style be classified using only drum-pattern features extracted from audio?
+> 是否能**僅使用乾淨的鼓組模式特徵**來分類音樂風格？
 
-這個設定是刻意限制過的。用 drum-only audio 做 14-class classification 比用 full songs 做 genre classification 更困難，但它可以更清楚地觀察 rhythmic features 與 timbral features 是否真的包含可用的 style signal。
+由於使用的是乾淨的純鼓組音檔，能有效排除其他聲音的干擾，讓我們更清楚地觀察節奏與音色特徵在風格辨識上所扮演的角色。
 
 ## Dataset
 
-- Source: Groove MIDI Dataset (GMD), Google Magenta
-- Original metadata: 1,150 entries
-- Usable audio recordings: 1,090 files
-- Final feature table: 1,090 rows and 35 columns
-- Final task: **14-class classification**，rare styles 合併成 `others` class
-- Split: 70% training, 15% validation, 15% test，使用 stratified sampling
+- 來源：Groove MIDI Dataset，Google Magenta
+- 原始資料：1,150 筆
+- 可用音訊檔案：1,090 個
+- 最終特徵表格：1,090 列 × 35 欄
+- 最終任務：合併稀有類別後的**14 類分類**
+- 分割比例：70% Train、15% Test、15% Validation（Stratified）
 
-部分樣本數太少的 classes，例如 `dance`、`afrobeat`、`blues`、`middleeastern`，被合併到 `others`，避免 extreme class imbalance 影響 Bayesian inference。
+少數類別（如 `dance`、`afrobeat`、`blues`、`middleeastern`）已合併至 `others` 以降低嚴重的類別不平衡。
 
-## Feature Extraction
+## 特徵提取
 
-Raw audio 使用 `librosa` 載入，resample 到 22,050 Hz，並轉成 mono。每個 audio clip 擷取以下 features：
+使用 `librosa` 載入原始音訊，重新取樣至 22,050 Hz 並轉為單聲道。提取以下特徵：
 
 - Tempo / BPM
 - Onset rate
@@ -38,75 +36,69 @@ Raw audio 使用 `librosa` 載入，resample 到 22,050 Hz，並轉成 mono。�
 - Spectral centroid
 - Spectral bandwidth
 - Spectral rolloff
-- MFCC means, 13 coefficients
-- MFCC standard deviations, 13 coefficients
+- MFCC 平均值（13 個係數）
+- MFCC 標準差（13 個係數）
 
-這些 features 同時描述 drum recordings 的 rhythmic behavior 與 timbral characteristics。
+這些特徵同時捕捉了鼓組的節奏行為與音色特性。
 
-## Models
+## 模型
 
-本專案比較三種 Bayesian / probabilistic modeling approaches。
+本專案比較了三種建模方法。
 
 ### 1. Gaussian Naive Bayes Baseline
 
-Gaussian Naive Bayes 作為 simple baseline，用來檢查 extracted features 是否包含可用的 style signal。
+作為簡單基準，用來驗證提取的特徵是否含有有用訊號。
 
-Validation accuracy:
+驗證集表現：
+- **Top-1 Accuracy：21.47%**
 
-- **21.47% top-1 accuracy**
+高於 14 類隨機猜測(7.1%)。
 
-這個結果高於 14-class task 的 balanced random baseline，但模型受到 feature independence assumption 與 Gaussian assumption 限制，因此表現有限。
+### 2. Baysian Logistic Regression / Baysian Linear 模型
 
-### 2. Bayesian Multinomial Logistic Regression / Bayesian Linear Model
+使用 `PyMC` 與 ADVI 變分推斷實作。模型在學習標準化音訊特徵與風格標籤的關係時，會產生完整的後驗分佈而非單一點估計。
 
-主要模型使用 `PyMC` 實作，並透過 ADVI variational inference 近似 posterior distribution。這個模型會學習 standardized audio features 與 style labels 之間的關係，並輸出 posterior probabilities，而不是只有 single hard prediction。
+不同Prior設定與超參數下的表現：
+- **Top-1 Accuracy：約 28.83% ~ 34.97%**
+- **Top-2 Accuracy：約 42.94% ~ 55.21%**
 
-Validation performance across prior settings and hyperparameters:
+由於鼓組風格常有重疊，top-2 Accuracy在此task中特別有用。即使第一預測錯誤，模型仍常將正確風格列為高度可能的候選之一。
 
-- **Top-1 accuracy:** 約 **28.83% 到 34.97%**
-- **Top-2 accuracy:** 約 **42.94% 到 55.21%**
+### 3. Baysian Neural Network
 
-Top-2 accuracy 在這個專案中特別重要，因為 drum styles 常有 overlap。即使 top-1 prediction 不完全正確，模型仍可能把高 probability 分配給 musically related styles。
+作為非線性模型的對照。雖然具備更彈性的決策邊界，但可解釋性較Baysian線性模型低。
 
-### 3. Bayesian Neural Network
+加權 BNN 驗證表現：
+- **Top-1 Accuracy：約 21% ~ 22%**
+- **Top-2 Accuracy：約 38% ~ 39%**
 
-Bayesian Neural Network 作為 nonlinear comparison。它能表示更複雜的 decision boundaries，但 interpretability 低於 Bayesian linear model。
+在現有實驗中，BNN 並未超越較簡單的Baysian線性模型且有Overfitting跡象。
 
-Weighted BNN validation performance:
+## 重要結果
 
-- **Top-1 accuracy:** 約 **21% 到 22%**
-- **Top-2 accuracy:** 約 **38% 到 39%**
+- 這是一個**14 類純鼓組分類任務**，不同於二元分類或完整歌曲類型分類。
+- 平衡隨機猜測的 top-1 Baseline約為 **7.1%**。
+- Gaussian Naive Bayes 達到 **21.47%** Accuracy。
+- 最佳Baysian模型達到 **34.97%** top-1 與 **55.21%** top-2 Accuracy。
+- 重要feature包含：MFCC 平均值、Spectral Centroid、RMS Energy 與 onset 相關的feature。
 
-在目前實驗結果中，BNN 沒有超過較簡單的 Bayesian linear model。
+## 解讀
 
-## Key Results
+結果顯示，僅使用鼓組進行風格分類是可行的，但難度較高。模型能為 rock、punk、latin、funk、jazz 等主要風格恢復有意義的訊號。少數類別與高度相似的風格仍較難辨識，這與樣本數少及節奏詞彙重疊有關。
 
-- 任務是 **14-class drum-only classification**，不是 binary classification，也不是 full-song genre classification。
-- Balanced random guessing 的 top-1 accuracy 約為 **7.1%**。
-- Gaussian Naive Bayes baseline 達到 **21.47%** validation accuracy。
-- 最佳 Bayesian model 達到 **34.97% top-1 accuracy** 與 **55.21% top-2 accuracy**。
-- 在其中一次 validation analysis 中，rock 是最容易辨識的 class，accuracy 達到 **70.2%**。
-- 重要 features 包含 MFCC means、spectral centroid、RMS energy 與 onset-related features。
+top-1 分數應放在 14-class classification情境下解讀。Baysian模型大幅優於基準，且多數時候能將正確類別置於前兩名。
 
-## Interpretation
+## 如何執行
 
-結果顯示，drum-only style classification 是可行但困難的任務。模型能從部分 major styles 中抓到有效 signal，特別是 rock、punk、latin、funk、jazz。相對地，minority classes 與 rhythmically similar styles 較難分類，主要原因是樣本數較少且 rhythmic vocabulary 重疊。
+1. 在 Google Colab 中開啟 `Data_Preprocessing.ipynb`。
+2. 執行 Data_Preprocessing notebook，下載 GMD 資料集並提取音訊特徵。
+3. 將清理後的特徵表存為 `cleaned.parquet`。
+4. 開啟 `Music_Genre_Identify_Using_Drum_Pattern.ipynb`。
+5. 執行建模 notebook 來訓練與比較Baysian模型。
 
-Top-1 accuracy 必須放在正確脈絡下看：這是 14-class、imbalanced、drum-only classification problem。比較有意義的結論是，Bayesian models 相比 baseline 有明顯提升，而且經常能把 true class 放進 top-2 predictions，這比較符合 genre labels 本身有 ambiguity 的現實。
+原始資料集較大，未包含在 repository 中。前處理 notebook 會直接從 Google Magenta 下載。
 
-Bayesian approach 的價值在於 uncertainty estimation 與 posterior analysis。模型不是只輸出單一 label，而是能顯示多個 styles 同時 plausible 的情況。
-
-## How to Run
-
-1. 用 Google Colab 開啟 `notebooks/Data_Preprocessing.ipynb`。
-2. 執行 preprocessing notebook，下載 GMD dataset 並擷取 audio features。
-3. 將 cleaned feature table 儲存為 `cleaned.parquet`。
-4. 開啟 `notebooks/Music_Genre_Identify_Using_Drum_Pattern.ipynb`。
-5. 執行 modeling notebook，訓練並比較 Bayesian models。
-
-原始 dataset 檔案較大，因此不包含在 repository 裡。Preprocessing notebook 會直接從 Google Magenta 下載資料。
-
-## Tools Used
+## 使用工具
 
 - Python
 - NumPy
@@ -117,9 +109,3 @@ Bayesian approach 的價值在於 uncertainty estimation 與 posterior analysis�
 - ArviZ
 - PyTensor
 - Jupyter Notebook / Google Colab
-
-## Notes
-
-這個專案的重點不是單純套用 off-the-shelf classifier，而是建立完整 workflow：audio preprocessing、feature extraction、Bayesian modeling、posterior analysis、model comparison 與 error interpretation。
-
-中文版 README 保留主要 technical keywords 的英文寫法，避免在面試中因為專有名詞翻譯不一致造成理解落差。

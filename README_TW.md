@@ -1,8 +1,8 @@
-# Baysian模型於鼓組模式風格分類
+# Bayesian模型:鼓組風格Classification
 
 本專案是一個**14 類鼓組風格分類任務**，僅使用**純鼓組音訊**進行建模。模型不使用旋律、人聲、歌詞、和聲、藝人資訊或完整歌曲的製作脈絡，只依賴從獨立鼓組演奏中提取的節奏與頻譜特徵。
 
-由於任務有**14 個類別**，嚴格的 top-1 Accuracy約在 **35%~40%**。隨機猜測的基準約為 **7.1%**，且許多類別在節奏上高度相似或樣本數較少。更具參考價值的指標是：Baysian模型明顯優於簡單的 Naive Bayes Baseline，且 top-2 Accuracy可達到約 **55%**，代表正確風格通常出現在模型最可能的前兩個預測中。
+由於任務有**14 個類別**，嚴格的 top-1 Accuracy約在 **35%~40%**。隨機猜測的基準約為 **7.1%**，且許多類別在節奏上高度相似或樣本數較少。更具參考價值的指標是：Bayesian模型明顯優於簡單的 Naive Bayes Baseline，且 top-2 Accuracy可達到約 **55%**，代表正確風格通常出現在模型最可能的前兩個預測中。
 
 ## 專案動機
 
@@ -54,7 +54,7 @@
 
 高於 14 類隨機猜測(7.1%)。
 
-### 2. Baysian Logistic Regression / Baysian Linear 模型
+### 2. Bayesian Logistic Regression / Bayesian Linear 模型
 
 使用 `PyMC` 與 ADVI 變分推斷實作。模型在學習標準化音訊特徵與風格標籤的關係時，會產生完整的後驗分佈而非單一點估計。
 
@@ -64,29 +64,29 @@
 
 由於鼓組風格常有重疊，top-2 Accuracy在此task中特別有用。即使第一預測錯誤，模型仍常將正確風格列為高度可能的候選之一。
 
-### 3. Baysian Neural Network
+### 3. Bayesian Neural Network
 
-作為非線性模型的對照。雖然具備更彈性的決策邊界，但可解釋性較Baysian線性模型低。
+作為非線性模型的對照。雖然具備更彈性的決策邊界，但可解釋性較Bayesian線性模型低。
 
 加權 BNN 驗證表現：
 - **Top-1 Accuracy：約 21% ~ 22%**
 - **Top-2 Accuracy：約 38% ~ 39%**
 
-在現有實驗中，BNN 並未超越較簡單的Baysian線性模型且有Overfitting跡象。
+在現有實驗中，BNN 並未超越較簡單的Bayesian線性模型且有Overfitting跡象。
 
 ## 重要結果
 
 - 這是一個**14 類純鼓組分類任務**，不同於二元分類或完整歌曲類型分類。
 - 平衡隨機猜測的 top-1 Baseline約為 **7.1%**。
 - Gaussian Naive Bayes 達到 **21.47%** Accuracy。
-- 最佳Baysian模型達到 **34.97%** top-1 與 **55.21%** top-2 Accuracy。
+- 最佳Bayesian模型達到 **34.97%** top-1 與 **55.21%** top-2 Accuracy。
 - 重要feature包含：MFCC 平均值、Spectral Centroid、RMS Energy 與 onset 相關的feature。
 
 ## 解讀
 
 結果顯示，僅使用鼓組進行風格分類是可行的，但難度較高。模型能為 rock、punk、latin、funk、jazz 等主要風格恢復有意義的訊號。少數類別與高度相似的風格仍較難辨識，這與樣本數少及節奏詞彙重疊有關。
 
-top-1 分數應放在 14-class classification情境下解讀。Baysian模型大幅優於基準，且多數時候能將正確類別置於前兩名。
+top-1 分數應放在 14-class classification情境下解讀。Bayesian模型大幅優於基準，且多數時候能將正確類別置於前兩名。
 
 ## 如何執行
 
@@ -94,7 +94,7 @@ top-1 分數應放在 14-class classification情境下解讀。Baysian模型大�
 2. 執行 Data_Preprocessing notebook，下載 GMD 資料集並提取音訊特徵。
 3. 將清理後的特徵表存為 `cleaned.parquet`。
 4. 開啟 `Music_Genre_Identify_Using_Drum_Pattern.ipynb`。
-5. 執行建模 notebook 來訓練與比較Baysian模型。
+5. 執行建模 notebook 來訓練與比較Bayesian模型。
 
 原始資料集較大，未包含在 repository 中。前處理 notebook 會直接從 Google Magenta 下載。
 

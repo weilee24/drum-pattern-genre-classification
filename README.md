@@ -87,25 +87,6 @@ The results suggest that drum-only style classification is possible but difficul
 
 The Bayesian approach is useful because it provides uncertainty estimates and interpretable posterior behavior. This is important for this task because genre boundaries are naturally ambiguous, especially when only drum audio is available.
 
-## Repository Structure
-
-```text
-.
-├── README.md
-├── requirements.txt
-├── data_description.md
-├── results.md
-├── model_card.md
-├── .gitignore
-├── notebooks/
-│   ├── Data_Preprocessing.ipynb
-│   └── Music_Genre_Identify_Using_Drum_Pattern.ipynb
-├── report/
-│   └── Bayesian_Modeling_of_Drum_Pattern_Styles.pdf
-├── results/
-└── data/
-```
-
 ## How to Run
 
 1. Open `notebooks/Data_Preprocessing.ipynb` in Google Colab.

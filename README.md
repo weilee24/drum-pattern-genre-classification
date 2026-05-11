@@ -1,35 +1,35 @@
-# Bayesian Modeling of Drum Pattern Styles
+# Bayesian Modeling for Drum Style Classification
 
-This project is a **14-class drum-style classification task** using **drum-only audio**. The model does not use melody, vocals, lyrics, harmony, artist metadata, or full-song production context. It only uses rhythmic and spectral features extracted from isolated drum performances.
+This project is a **14-class drum-style classification** task. The goal is to classify the style of each drum pattern using only clean drum audio.
 
-Because the task has **14 possible classes**, a strict top-1 accuracy of around **35% to 40%** should not be interpreted like a binary classification score. A balanced random guess would be about **7.1%**, and many classes are rhythmically similar or underrepresented. The more informative result is that the Bayesian models clearly outperform the simple Naive Bayes baseline and reach up to about **55% top-2 accuracy**, meaning the correct style is often among the model's two most probable predictions.
+I used Google Magenta's **Groove MIDI Dataset (GMD)** because it contains isolated drum performances recorded by professional drummers. From the audio files, I extracted features related to rhythmic density, onset patterns, dynamics, timbre, and spectral characteristics. The model does not use melody, vocals, or other instruments.
 
-The goal of this project is not to claim perfect genre recognition. The goal is to test how much stylistic information can be recovered from drum patterns alone, while using Bayesian models to expose uncertainty and model limitations.
+Since this is a **14-class classification** problem, the random top-1 baseline is about **7.1%**. Under this setting, the best Bayesian model reached around **34.97% top-1 accuracy** and **55.21% top-2 accuracy**, clearly outperforming the Gaussian Naive Bayes baseline at **21.47%**. This shows that the model can learn recognizable style patterns from drum audio.
 
-## Project Motivation
+## Motivation
 
-Music genre classification is difficult because modern genres often overlap. Many styles share similar production techniques, melodic patterns, and instrumentation. Drum patterns, however, often preserve rhythmic and stylistic cues.
+Music genre classification is difficult because many styles borrow similar production techniques, melodic ideas, and instrument arrangements from each other. However, drum patterns often preserve strong rhythmic and stylistic information.
 
 The main question of this project is:
 
-> Can musical style be classified using only drum-pattern features extracted from audio?
+> Can music style be classified using only clean drum pattern features?
 
-This setup is intentionally restrictive. Classifying 14 styles from drum-only audio is harder than classifying full songs, but it isolates whether rhythmic and timbral drum features carry enough signal for style prediction.
+By using isolated drum audio, the project focuses directly on rhythm and timbre without interference from other instruments or production layers.
 
 ## Dataset
 
-- Source: Groove MIDI Dataset (GMD), Google Magenta
-- Original metadata: 1,150 entries
-- Usable audio recordings: 1,090 files
-- Final feature table: 1,090 rows and 35 columns
-- Final task: **14-class classification** after merging rare styles into an `others` class
-- Split: 70% training, 15% validation, 15% test, using stratified sampling
+- Source: Groove MIDI Dataset, Google Magenta
+- Original samples: 1,150
+- Usable audio files: 1,090
+- Final feature table: 1,090 rows × 35 columns
+- Final task: **14-class classification** after merging rare classes
+- Train-test split: 70% Train, 15% Validation, 15% Test, stratified
 
-Rare classes such as `dance`, `afrobeat`, `blues`, and `middleeastern` were grouped into `others` to reduce extreme class imbalance.
+Rare classes such as `dance`, `afrobeat`, `blues`, and `middleeastern` were merged into `others` to reduce severe class imbalance.
 
 ## Feature Extraction
 
-Raw audio files were loaded with `librosa`, resampled to 22,050 Hz, and converted to mono. The following features were extracted:
+I used `librosa` to load the raw audio, resample it to 22,050 Hz, and convert it to mono. The extracted features include:
 
 - Tempo / BPM
 - Onset rate
@@ -41,72 +41,68 @@ Raw audio files were loaded with `librosa`, resampled to 22,050 Hz, and converte
 - MFCC means, 13 coefficients
 - MFCC standard deviations, 13 coefficients
 
-These features capture both rhythmic behavior and timbral characteristics of the drum recordings.
+These features capture both rhythmic behavior and timbral characteristics of the drum performances.
 
 ## Models
 
-Three modeling approaches were compared.
+This project compares three modeling approaches.
 
 ### 1. Gaussian Naive Bayes Baseline
 
-Used as a simple baseline to test whether the extracted features contain useful signal.
+This model serves as a simple baseline to check whether the extracted features contain useful signal.
 
-Validation accuracy:
+Validation performance:
 
-- **21.47% top-1 accuracy**
+- **Top-1 Accuracy: 21.47%**
 
-This is above a balanced random baseline for a 14-class task, but the model is limited by its independence and Gaussian assumptions.
+This is higher than the random baseline of about 7.1% for 14 classes.
 
-### 2. Bayesian Multinomial Logistic Regression / Bayesian Linear Model
+### 2. Bayesian Multinomial Logistic Regression
 
-Implemented with `PyMC` and trained using ADVI variational inference. The model learns relationships between standardized audio features and style labels while producing posterior distributions instead of only point predictions.
+This model was implemented using `PyMC` and ADVI variational inference. Instead of producing only point estimates, the model learns posterior distributions over the parameters while modeling the relationship between standardized audio features and style labels.
 
-Validation performance across prior settings and hyperparameters:
+Performance across different prior settings and hyperparameters:
 
-- **Top-1 accuracy:** approximately **28.83% to 34.97%**
-- **Top-2 accuracy:** approximately **42.94% to 55.21%**
+- **Top-1 Accuracy: about 28.83% ~ 34.97%**
+- **Top-2 Accuracy: about 42.94% ~ 55.21%**
 
-Top-2 accuracy is important here because drum styles often overlap. A model may assign high probability to two musically related styles even when the top prediction is not exactly correct.
+Because many drum styles overlap, top-2 Accuracy helps show whether the model often ranks the correct style near the top.
 
 ### 3. Bayesian Neural Network
 
-A Bayesian neural network was used as a nonlinear comparison. It allowed more flexible decision boundaries but was less interpretable than the Bayesian linear model.
+The Bayesian Neural Network was used as a nonlinear comparison model. It has a more flexible decision boundary, but it is less interpretable than the Bayesian Multinomial Logistic Regression model.
 
 Weighted BNN validation performance:
 
-- **Top-1 accuracy:** approximately **21% to 22%**
-- **Top-2 accuracy:** approximately **38% to 39%**
+- **Top-1 Accuracy: about 21% ~ 22%**
+- **Top-2 Accuracy: about 38% ~ 39%**
 
-In the available experiments, the BNN did not outperform the simpler Bayesian model.
+In the current experiments, the BNN did not outperform the simpler Bayesian Multinomial Logistic Regression model and showed signs of overfitting.
 
-## Key Results
+## Results
 
-- The task is **14-class drum-only classification**, not binary classification or full-song genre classification.
-- Balanced random guessing would be about **7.1%** top-1 accuracy.
-- Gaussian Naive Bayes reached **21.47%** validation accuracy.
-- The best Bayesian model reached **34.97% top-1 accuracy** and **55.21% top-2 accuracy**.
-- Rock was the easiest class to identify in one validation analysis, reaching **70.2%** accuracy.
+- The random top-1 baseline for 14 balanced classes is about **7.1%**.
+- GNB achieved **21.47%** Accuracy as the baseline.
+- The best Bayesian model reached **34.97% top-1** and **55.21% top-2 Accuracy**.
 - Important features included MFCC means, spectral centroid, RMS energy, and onset-related features.
 
 ## Interpretation
 
-The results suggest that drum-only style classification is possible but difficult. The model can recover meaningful signal for several major styles, especially rock, punk, latin, funk, and jazz. Minority classes and closely related styles remain difficult because they have fewer samples and overlapping rhythmic vocabulary.
+The results show that drum-only style classification is possible, but the task is difficult. The model was able to learn recognizable patterns for major styles such as rock, punk, latin, funk, and jazz. Minority classes and highly similar styles remained harder to classify.
 
-The strict top-1 score should be read in context: this is a 14-class, imbalanced, drum-only classification problem. The stronger result is that Bayesian models improve over the baseline and often place the true class within the top two predictions, which better reflects the ambiguity of genre labels.
-
-The Bayesian approach is useful because it provides uncertainty estimates and interpretable posterior behavior. Instead of only giving a hard label, the model shows when multiple styles are plausible.
+In a 14-class classification setting, the Bayesian model clearly outperformed the baseline and often placed the correct class within the top two predictions.
 
 ## How to Run
 
-1. Open `notebooks/Data_Preprocessing.ipynb` in Google Colab.
-2. Run the preprocessing notebook to download the GMD dataset and extract audio features.
+1. Open `Data_Preprocessing.ipynb` in Google Colab.
+2. Run the Data_Preprocessing notebook to download the GMD dataset and extract audio features.
 3. Save the cleaned feature table as `cleaned.parquet`.
-4. Open `notebooks/Music_Genre_Identify_Using_Drum_Pattern.ipynb`.
+4. Open `Music_Genre_Identify_Using_Drum_Pattern.ipynb`.
 5. Run the modeling notebook to train and compare the Bayesian models.
 
 The original dataset is large and is not included in this repository. The preprocessing notebook downloads it directly from Google Magenta.
 
-## Tools Used
+## Tools
 
 - Python
 - NumPy
